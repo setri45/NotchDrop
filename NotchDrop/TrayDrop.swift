@@ -57,6 +57,10 @@ class TrayDrop: ObservableObject {
 
     @Published var isLoading: Int = 0
 
+    func fileExists(_ fileName: String) -> Bool {
+        return items.contains { $0.fileName == fileName }
+    }
+
     func load(_ providers: [NSItemProvider]) {
         assert(!Thread.isMainThread)
         DispatchQueue.main.asyncAndWait { isLoading += 1 }
@@ -67,7 +71,11 @@ class TrayDrop: ObservableObject {
         do {
             let items = try urls.map { try DropItem(url: $0) }
             DispatchQueue.main.async {
-                items.forEach { self.items.updateOrInsert($0, at: 0) }
+                items.forEach { item in
+                    if !self.fileExists(item.fileName) {
+                        self.items.updateOrInsert(item, at: 0)
+                    }
+                }
                 self.isLoading -= 1
             }
         } catch {
